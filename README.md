@@ -18,7 +18,7 @@ pip install pandas sqlite3 emoji
 
 ## Getting Started
 
-Follow the steps below to use iMessage-StatTracker:\
+Follow the steps below to use iMessage-StatTracker:
 
 
 1. Disable SIP (System Integrity Protection):
