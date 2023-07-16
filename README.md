@@ -6,12 +6,14 @@
 
 Before using iMessage-StatTracker, please ensure you have the following requirements met:
 
-1. **Python**: Make sure you have Python installed on your macOS system. You can check by running `python --version` in the Terminal.
+1. **Python**: Make sure you have Python installed on your macOS system.\
+You can check by running `python --version` in the Terminal.
 
 2. **Libraries**: Install the required libraries using the following command:
 
 ```bash
-pip install pandas sqlite3
+pip install pandas sqlite3 emoji
+
 ```
 
 ## Getting Started
