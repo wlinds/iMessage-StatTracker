@@ -1,4 +1,4 @@
-import os, sqlite3, re, emoji, collections2
+import os, sqlite3, re, emoji, collections
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -7,8 +7,6 @@ import nltk # language processing
 from nltk.corpus import stopwords
 nltk.download('punkt')
 nltk.download('stopwords')
-
-swedish_stop_words = set(stopwords.words('swedish'))
 
 def extract_imessages(chat_db_path):
     if not os.path.isfile(chat_db_path):
@@ -51,13 +49,12 @@ def my_most_frequent_words(df, num_words=20, stopword_language='swedish'):
     # Filter out non-alphanumeric characters and stop words
     words = [word for word in words if word.isalpha() and word not in stop_words]
 
-    word_count = {}
-    for word in words:
-        word_count[word] = word_count.get(word, 0) + 1
+    word_count = collections.Counter(words)
 
     most_frequent_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)[:num_words]
 
     return most_frequent_words
+
 
 def most_frequent_emojis(df, num_emojis=20):
     """
@@ -101,29 +98,28 @@ def plot_most_received_sent_messages(df):
     plt.tight_layout()
     plt.show()
 
-
 if __name__ == "__main__":
 
     # Replace with your username
     chat_db_path = "/Users/helvetica/Library/Messages/chat.db"  
     df = extract_imessages(chat_db_path)
 
-    print(df.head())
-
     # Find the most frequent words (without filtering stop words)
     most_frequent_words = my_most_frequent_words(df)
-    print("Top 10 Most Frequent Words Sent:")
+    print("Top 20 Most Frequent Words Sent:")
     for word, count in most_frequent_words:
         print(f"{word}: {count}")
 
     # Find the most frequent words (excluding stop words for Swedish)
     most_frequent_words_filtered = my_most_frequent_words(df, stopword_language='swedish')
-    print("Top 10 Most Frequent Words Sent (excluding stop words):")
+    print("Top 20 Most Frequent Words Sent (excluding stop words):")
     for word, count in most_frequent_words_filtered:
         print(f"{word}: {count}")
 
     # Find the most frequent emojis
-    most_frequent_emojis = most_frequent_emojis(df, num_emojis=20)
-    print("Top 20 Most Frequent Emojis Sent:")
-    for emoji, count in most_frequent_emojis:
+    freq_emojis = most_frequent_emojis(df, num_emojis=10)
+    print("Top 10 Most Frequent Emojis Sent:")
+    for emoji, count in freq_emojis:
         print(f"{emoji}: {count}")
+
+    plot_most_received_sent_messages(df)
