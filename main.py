@@ -29,13 +29,6 @@ def extract_imessages(chat_db_path):
     JOIN handle ON message.handle_id = handle.rowid
     """
 
-    query2 =  """
-    SELECT message.ROWID, message.date, message.text, message.attributedBody, handle.id, message.is_from_me, message.cache_roomnames
-    FROM message
-    LEFT JOIN handle ON message.handle_id = handle.ROWID
-    ORDER BY message.date DESC LIMIT 100;
-    """
-
     cursor.execute(query)
     imessage_data = cursor.fetchall()
 
