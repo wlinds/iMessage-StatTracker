@@ -2,11 +2,16 @@ import os, sqlite3, re, emoji, collections
 import matplotlib.pyplot as plt
 import pandas as pd
 
-#### https://github.com/nltk/nltk
+# https://github.com/nltk/nltk
 import nltk # language processing
 from nltk.corpus import stopwords
-nltk.download('punkt')
-nltk.download('stopwords')
+
+# Download dependencies from nltk
+if not nltk.data.find('tokenizers/punkt'):
+    nltk.download('punkt')
+
+if not nltk.data.find('corpora/stopwords'):
+    nltk.download('stopwords')
 
 def extract_imessages(chat_db_path):
     if not os.path.isfile(chat_db_path):
@@ -35,18 +40,62 @@ def extract_imessages(chat_db_path):
     return pd.DataFrame(imessage_data, columns=['message_id', 'message_text', 'message_date', 'is_from_me', 'contact_id', 'contact_service'])
 
 
-def my_most_frequent_words(df, num_words=20, stopword_language='swedish'):
+def get_unique_contact_ids(df):
+    unique_contact_ids = df['contact_id'].unique().tolist()
+    return unique_contact_ids
+
+
+def total_messages(df, is_sent=True, both=False):
+    if both:
+        return df.shape[0]
+    
+    messages = df[df['is_from_me'] == int(is_sent)]
+    return messages.shape[0]
+
+
+def count_received_messages_from_contact(df, contact_id):
+    received_messages = df[(df['contact_id'] == contact_id) & (df['is_from_me'] == 0)]
+    total_received = received_messages.shape[0]
+    return total_received
+
+
+def most_frequent_words(df, contact_id=None, is_sent=True, num_words=20, stopword_language='swedish'):
     """
-    Get top n most frequent words sent.
+    Get top n most frequent words sent or received from a specific contact_id.
+    If contact_id is None, the function will consider all messages.
     """
 
-    # Merge all messages into a single string
-    all_messages_text = ' '.join(df[df['is_from_me'] == 1]['message_text'])
+    if contact_id == None:
+        messages_text = df[df['is_from_me'] == int(is_sent)]['message_text']
+    else:
+        messages_text = df[(df['is_from_me'] == int(is_sent)) & (df['contact_id'] == contact_id)]['message_text']
+
+    all_messages_text = ' '.join(messages_text)
 
     words = nltk.word_tokenize(all_messages_text.lower())
     stop_words = set(stopwords.words(stopword_language))
 
-    # Filter out non-alphanumeric characters and stop words
+    words = [word for word in words if word.isalpha() and word not in stop_words]
+
+    word_count = collections.Counter(words)
+
+    most_frequent_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)[:num_words]
+
+    return most_frequent_words
+
+
+def most_frequent_words_sent_to_contact(df, contact_id, num_words=20, stopword_language='swedish'):
+    """
+    Get top n most frequent words sent by you (is_from_me=True) to a specific contact_id.
+    """
+
+    messages_text = df[(df['is_from_me'] == 1) & (df['contact_id'] == contact_id)]['message_text']
+
+    all_messages_text = ' '.join(messages_text)
+
+    words = nltk.word_tokenize(all_messages_text.lower())
+    stop_words = set(stopwords.words(stopword_language))
+
     words = [word for word in words if word.isalpha() and word not in stop_words]
 
     word_count = collections.Counter(words)
@@ -73,6 +122,7 @@ def most_frequent_emojis(df, num_emojis=20):
     most_frequent_emojis = emoji_count.most_common(num_emojis)
 
     return most_frequent_emojis
+
 
 def plot_most_received_sent_messages(df):
     message_count_by_contact = df.groupby('contact_id').size().reset_index(name='message_count')
@@ -104,17 +154,17 @@ if __name__ == "__main__":
     chat_db_path = "/Users/helvetica/Library/Messages/chat.db"  
     df = extract_imessages(chat_db_path)
 
-    # Find the most frequent words (without filtering stop words)
-    most_frequent_words = my_most_frequent_words(df)
-    print("Top 20 Most Frequent Words Sent:")
-    for word, count in most_frequent_words:
-        print(f"{word}: {count}")
+    print(len(get_unique_contact_ids(df)))
+    print(total_messages(df, is_sent=True, both=True))
 
-    # Find the most frequent words (excluding stop words for Swedish)
-    most_frequent_words_filtered = my_most_frequent_words(df, stopword_language='swedish')
-    print("Top 20 Most Frequent Words Sent (excluding stop words):")
-    for word, count in most_frequent_words_filtered:
-        print(f"{word}: {count}")
+    # To get the top most frequent words sent
+    top_words_sent = most_frequent_words(df, is_sent=True)
+    print("Most frequent words sent:", top_words_sent)
+
+    # Get the top most frequent words received from a specific contact_id
+    contact_id = '' # Enter phone#
+    top_words_received = most_frequent_words(df, contact_id=contact_id, is_sent=False)
+    print(f"Most frequent words received from {contact_id}:", top_words_received)
 
     # Find the most frequent emojis
     freq_emojis = most_frequent_emojis(df, num_emojis=10)
@@ -123,3 +173,9 @@ if __name__ == "__main__":
         print(f"{emoji}: {count}")
 
     plot_most_received_sent_messages(df)
+
+    print(count_received_messages_from_contact(df, contact_id))
+
+    # To get the top most frequent words sent to a specific contact_id
+    top_words_sent_to_contact = most_frequent_words_sent_to_contact(df, contact_id=contact_id)
+    print(f"Most frequent words sent to {contact_id}:", top_words_sent_to_contact)
