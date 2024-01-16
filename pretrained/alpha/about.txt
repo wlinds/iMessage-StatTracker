@@ -1,0 +1,13 @@
+alpha_0 is a swedish model trained on emotions-sv_fix.csv
+
+Epoch 25/25
+305/305 [==============================] - 16s 53ms/step - loss: 0.2613 - accuracy: 0.9200 - val_loss: 0.6772 - val_accuracy: 0.7980
+
+all datapoints labeled 'surprise' has been removed
+dataset has been equalized to 
+
+joy        2048
+sadness    2048
+anger      2048
+fear       2048
+love       1641
