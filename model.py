@@ -23,6 +23,7 @@ class EmotionClassifier:
         self.model = None
         self.input_dim = None
         self.input_length = None
+        self.dense_output = None
         self.one_hot_labels = None
 
     def encode_labels(self, df):
@@ -34,12 +35,13 @@ class EmotionClassifier:
         self.tokenizer.fit_on_texts(df['text'])
         self.input_dim = len(self.tokenizer.word_index) + 1
         self.input_length = max(len(sequence) for sequence in self.tokenizer.texts_to_sequences(df['text']))
+        self.dense_output = len(df['label'].value_counts())
 
     def get_model(self):
         model = Sequential()
         model.add(Embedding(input_dim=self.input_dim, output_dim=128, input_length=self.input_length))
         model.add(GRU(64, dropout=0.2, recurrent_dropout=0.2))
-        model.add(Dense(5, activation='softmax')) # TODO output shape should be put given as input arg, not hard coded
+        model.add(Dense(self.dense_output, activation='softmax'))
         model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
         return model
 
@@ -119,7 +121,6 @@ if __name__ == "__main__":
         classifier.train(df, epochs=25)
 
     model_path = "pretrained/alpha/alpha_0.keras"
-    
     label_encoder_path = "pretrained/alpha/alpha_label_encoder.pkl"
     tokenizer_path = "pretrained/alpha/alpha_tokenizer.pkl"
     dims_path = "pretrained/alpha/alpha_dims.pkl"
